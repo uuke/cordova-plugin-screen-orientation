@@ -61,33 +61,16 @@ SOFTWARE.
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
             messageAsDictionary:@{@"device":orientation}];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
-        // SEE https://github.com/Adlotto/cordova-plugin-recheck-screen-orientation
-        // HACK: Force rotate by changing the view hierarchy. Present modal view then dismiss it immediately
-        // This has been changed substantially since iOS8 broke it...
-        ForcedViewController *vc = [[ForcedViewController alloc] init];
-        vc.calledWith = orientationIn;
-
-        // backgound should be transparent as it is briefly visible
-        // prior to closing.
-        vc.view.backgroundColor = [UIColor clearColor];
-        // vc.view.alpha = 0.0;
-        vc.view.opaque = YES;
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 80000
-        // This stops us getting the black application background flash, iOS8
-        vc.modalPresentationStyle = UIModalPresentationOverFullScreen;
-#endif
-
+      
+      if ([orientationIn isEqual: @"portrait"] || [orientationIn isEqual: @"portrait-secondary"] || [orientationIn isEqual: @"portrait-primary"]) {
+        NSNumber *value = [NSNumber numberWithInt:UIDeviceOrientationPortrait];
+        if ([orientationIn isEqual: @"portrait-secondary"]) {
+          value = [NSNumber numberWithInt:UIDeviceOrientationPortraitUpsideDown];
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self.viewController presentViewController:vc animated:NO completion:^{
-                // added to support iOS8 beta 5, @see issue #19
-                dispatch_after(0, dispatch_get_main_queue(), ^{
-                    [self.viewController dismissViewControllerAnimated:NO completion:nil];
-                });
-            }];
+          [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
         });
-
+      }
     }];
 }
 
