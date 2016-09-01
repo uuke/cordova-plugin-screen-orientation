@@ -67,15 +67,26 @@
             messageAsDictionary:@{@"device":orientation}];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 
-      if ([orientationIn isEqual: @"portrait"] || [orientationIn isEqual: @"portrait-secondary"] || [orientationIn isEqual: @"portrait-primary"]) {
-        NSNumber *value = [NSNumber numberWithInt:UIDeviceOrientationPortrait];
-        if ([orientationIn isEqual: @"portrait-secondary"]) {
-          value = [NSNumber numberWithInt:UIDeviceOrientationPortraitUpsideDown];
-        }
+        // SEE https://github.com/Adlotto/cordova-plugin-recheck-screen-orientation
+        // HACK: Force rotate by changing the view hierarchy.
+		ForcedViewController *vc = [[ForcedViewController alloc] init];
+        vc.calledWith = orientationIn;
+
+        // backgound should be transparent as it is briefly visible
+        // prior to closing.
+        vc.view.backgroundColor = [UIColor clearColor];
+        // vc.view.alpha = 0.0;
+        vc.view.opaque = YES;
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 80000
+        // This stops us getting the black application background flash, iOS8
+        vc.modalPresentationStyle = UIModalPresentationOverFullScreen;
+#endif
+
         dispatch_async(dispatch_get_main_queue(), ^{
-          [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
+            [self.viewController presentViewController:vc animated:NO completion:nil];
         });
-      }
+
     }];
 }
 
@@ -107,3 +118,4 @@
     return UIInterfaceOrientationMaskAll;
 }
 @end
+
